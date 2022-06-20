@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Share</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
+          integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"
+            integrity="sha512-xIPqqrfvUAc/Cspuj7Bq0UtHNo/5qkdyngx6Vwt+tmbvTLDszzXM0G6c91LXmGrRx8KEPulT+AfOOez+TeVylg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+<div class="container">
+    <div class="box">
+        <div class="columns">
+            <div class="column is-one-third ">
+                <a class="button is-primary" href="./download">
+        <span class="icon">
+            <i class="fa fa-download"></i>
+        </span>
+                    <span>Download</span>
+                </a>
+
+                <a class="button" href="./view">
+        <span class="icon">
+            <i class="fa fa-eye"></i>
+        </span>
+                    <span>View</span>
+                </a>
+            </div>
+
+        <div class="column is-one-third ">
+            <p>
+                <strong>
+                    Name
+                </strong>
+            </p>
+            <p>
+            <span class="icon">
+                <i class="fa fa-info-circle"></i>
+            </span>
+                <span id="info"></span>
+            </p>
+        </div>
+        <div class="column is-one-third ">
+            <p>
+                <strong>
+                    Size
+                </strong>
+            </p>
+            <p>
+            <span class="icon">
+                <i class="fa fa-sign"></i>
+            </span>
+                <span id="size"></span>
+            </p>        </div>
+        </div>
+    </div>
+</div>
+<script type="application/javascript">
+    (function () {
+        path = document.location.pathname.substr(1)
+        axios.get("api").then(function (response) {
+            console.log(response.data)
+            document.getElementById("info").innerHTML = response.data.name
+            document.getElementById("size").innerHTML =bytesToSize( response.data.size)
+        })
+    })();
+
+    function bytesToSize(bytes) {
+        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        if (bytes == 0) return '0 Byte';
+        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    }
+</script>
+</body>
+</html>
