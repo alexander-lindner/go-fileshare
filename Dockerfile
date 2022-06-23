@@ -19,5 +19,6 @@ FROM gcr.io/distroless/static AS final
 
 USER nonroot:nonroot
 COPY --from=build --chown=nonroot:nonroot /app /app
+COPY --chown=nonroot:nonroot ./static /static
 WORKDIR /workdir
 ENTRYPOINT ["/app"]

@@ -27,13 +27,11 @@ func main() {
 	config.loadConfig()
 	go background()
 
-	fileServer := http.FileServer(http.Dir("./static"))
+	staticDir := config.StaticDir
+	fileServer := http.FileServer(http.Dir(staticDir))
 
 	r := mux.NewRouter()
 	r.Handle("/", fileServer)
-	r.HandleFunc("/articles/{category}/{id:[0-9]+}", func(writer http.ResponseWriter, request *http.Request) {
-
-	})
 	r.HandleFunc("/{path}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		hash := vars["path"]
@@ -45,7 +43,7 @@ func main() {
 		w.Header().Set("Content-Type", "text/html")
 		w.Header().Set("Hash", hash)
 
-		http.ServeFile(w, r, "./static/serve.html")
+		http.ServeFile(w, r, staticDir+"/serve.html")
 	})
 	r.HandleFunc("/{path}/api", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)

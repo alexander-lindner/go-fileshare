@@ -18,6 +18,7 @@ type Config struct {
 		IsUrlShortenerEnabled bool   `yaml:"enabled"`
 		UrlShortenerUrl       string `yaml:"url"`
 	}
+	StaticDir string
 }
 
 func init() {
@@ -33,6 +34,12 @@ func (c *Config) init() {
 	c.globalConfigFile = "./config.yaml"
 
 	c.loadConfig()
+
+	if PathExists("./static") {
+		c.StaticDir = "./static"
+	} else {
+		c.StaticDir = "/static"
+	}
 
 	if c.OriginalPath == "" {
 		_, ok := os.LookupEnv("IN_DOCKER")
