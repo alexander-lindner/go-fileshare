@@ -1,0 +1,31 @@
+image:
+  repository: ghcr.io/alexander-lindner/go-fileshare
+  tag: latest
+  pullPolicy: IfNotPresent
+
+securityContext:
+  readOnlyRootFilesystem: false
+  runAsNonRoot: false
+
+podSecurityContext:
+  runAsUser: 0
+  runAsGroup: 0
+
+service:
+  main:
+    ports:
+      main:
+        port: 18080
+        targetPort: 8080
+
+probes:
+  startup:
+    enabled: true
+
+persistence:
+  workdir:
+    enabled: true
+    mountPath: "/workdir"
+  data:
+    enabled: true
+    mountPath: "/data"
