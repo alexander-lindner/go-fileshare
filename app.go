@@ -90,6 +90,13 @@ func main() {
 				return
 			}
 
+			go func() {
+				metaFileName := path + ".meta"
+				metaFile := loadMetaFile(metaFileName)
+				metaFile.Accesses++
+				saveMetaFile(metaFileName, metaFile)
+			}()
+
 		}
 	})
 	r.HandleFunc("/{path}/download", func(w http.ResponseWriter, r *http.Request) {
@@ -132,9 +139,10 @@ func main() {
 	}()
 	var wait = time.Second * 15
 	c := make(chan os.Signal, 1)
-	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
-	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
+	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C) or SIGKILL
+	// SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
 	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Kill)
 
 	// Block until we receive our signal.
 	<-c
@@ -179,7 +187,7 @@ func addMetaData(name string) {
 		metaFileName := newPath + ".meta"
 		if !PathExists(metaFileName) {
 			log.Info("File " + newPath + " has been changed, but no meta file found. Creating...")
-			randomString := RandStringBytesMaskImprSrcUnsafe(128)
+			randomString := RandStringBytesMaskImprSrcUnsafe(config.hashSize)
 			fileContent := metaFile{
 				Accesses: 0,
 				Id:       randomString,

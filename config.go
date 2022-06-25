@@ -11,14 +11,15 @@ type Config struct {
 
 	OriginalPath     string `yaml:"path"`
 	globalConfigFile string
-	DataFile         string `yaml:"DataFile"`
-	BaseUrl          string `yaml:"BaseUrl"`
+	DataFile         string `default:"./data.yaml" yaml:"DataFile"`
+	BaseUrl          string `default:"http://localhost:8080" yaml:"BaseUrl"`
 	Kutt             struct {
-		UrlShortenerApiKey    string `yaml:"key"`
-		IsUrlShortenerEnabled bool   `yaml:"enabled"`
-		UrlShortenerUrl       string `yaml:"url"`
+		UrlShortenerApiKey    string `default:"" yaml:"key"`
+		IsUrlShortenerEnabled bool   `default:"false" yaml:"enabled"`
+		UrlShortenerUrl       string `default:"" yaml:"url"`
 	}
 	StaticDir string
+	hashSize  int `default:"128" yaml:"hashLength"`
 }
 
 func init() {

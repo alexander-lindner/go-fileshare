@@ -38,6 +38,7 @@ kutt: # Kutt data
   key: ....
   enabled: false
   url: https://kutt.yourdomain.com/
+hashLength: 128
 ```
 The image is based on the `distroless` image and therefore, the user `nonroot (65532:65532)` is used internally.
 Set the correct file permissions for the `config.yaml` file, the `data.yaml` file and the shared dir, for example:
@@ -49,3 +50,14 @@ docker run --rm -ti -v $(pwd)/data:/data -v $(pwd)/config:/workdir -p 8080:8080 
 ```
 Or by using the TrueNAS Scale UI.
 Add a reverse proxy in front of the container, for example for TrueNAS Scale using the `external-service` and Ingress.
+
+## Customizing
+
+You can customize the web ui by mounting a custom `static` directory next to the `config.yaml`.
+Start by coping the `static` directory from the current running container:
+```shell
+docker cp 33d85f7ac9a3:/static ./static
+```
+Then restart the container.
+The webserver provides an api under the `/[HASH]/api` path.
+`/[HASH]/download` is the path for downloading, `/[HASH]/view` for previewing.
