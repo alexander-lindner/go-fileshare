@@ -12,16 +12,11 @@ keywords:
   - go-fileshare
 kubeVersion: '>=1.16.0-0'
 maintainers:
-  - email: info@truecharts.org
-    name: TrueCharts
-    url: https://truecharts.org
+  - email: 25225552+alexander-lindner@users.noreply.github.com
+    name: Alexander Lindner
+    url: https://alindner.org
 name: fileshare
 sources:
   - https://github.com/alexander-lindner/go-fileshare
 type: application
 version: 0.1.0
-annotations:
-  truecharts.org/catagories: |
-    - utilities
-  truecharts.org/SCALE-support: "true"
-  truecharts.org/grade: U
