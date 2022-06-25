@@ -22,6 +22,6 @@ type: application
 version: 0.1.0
 annotations:
   truecharts.org/catagories: |
-    - organizers
+    - utilities
   truecharts.org/SCALE-support: "true"
   truecharts.org/grade: U
