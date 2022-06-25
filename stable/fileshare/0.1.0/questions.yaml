@@ -697,12 +697,23 @@ questions:
             additional_attrs: true
             type: dict
             attrs:
+              - variable: enabled
+                label: "Enable the storage"
+                schema:
+                  type: boolean
+                  default: true
+                  hidden: true
+              - variable: name
+                label: "Name (optional)"
+                description: "Not required, please set to config when mounting /config or temp when mounting /tmp"
+                schema:
+                  type: string
               - variable: type
                 label: "Type of Storage"
                 description: "Sets the persistence type, Anything other than PVC could break rollback!"
                 schema:
                   type: string
-                  default: "simplePVC"
+                  default: "simpleHP"
                   enum:
                     - value: "simplePVC"
                       description: "PVC (simple)"
@@ -759,6 +770,14 @@ questions:
                 schema:
                   show_if: [ [ "type", "=", "hostPath" ] ]
                   type: hostpath
+              - variable: mountPath
+                label: "mountPath"
+                description: "Path inside the container the storage is mounted"
+                schema:
+                  type: string
+                  default: ""
+                  required: true
+                  valid_chars: '^\/([a-zA-Z0-9._-]+(\s?[a-zA-Z0-9._-]+|\/?))+$'
               - variable: medium
                 label: "EmptyDir Medium"
                 schema:
@@ -867,6 +886,7 @@ questions:
                                   label: "Value"
                                   schema:
                                     type: string
+
         - variable: data
           label: "Dir to share"
           description: "Stores the files which should be shared"
@@ -874,12 +894,23 @@ questions:
             additional_attrs: true
             type: dict
             attrs:
+              - variable: enabled
+                label: "Enable the storage"
+                schema:
+                  type: boolean
+                  default: true
+                  hidden: true
+              - variable: name
+                label: "Name (optional)"
+                description: "Not required, please set to config when mounting /config or temp when mounting /tmp"
+                schema:
+                  type: string
               - variable: type
                 label: "Type of Storage"
                 description: "Sets the persistence type, Anything other than PVC could break rollback!"
                 schema:
                   type: string
-                  default: "simplePVC"
+                  default: "simpleHP"
                   enum:
                     - value: "simplePVC"
                       description: "PVC (simple)"
@@ -936,6 +967,14 @@ questions:
                 schema:
                   show_if: [ [ "type", "=", "hostPath" ] ]
                   type: hostpath
+              - variable: mountPath
+                label: "mountPath"
+                description: "Path inside the container the storage is mounted"
+                schema:
+                  type: string
+                  default: ""
+                  required: true
+                  valid_chars: '^\/([a-zA-Z0-9._-]+(\s?[a-zA-Z0-9._-]+|\/?))+$'
               - variable: medium
                 label: "EmptyDir Medium"
                 schema:
