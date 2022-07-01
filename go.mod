@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/creasty/defaults v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/raahii/kutt-go v0.0.0-20191231143139-dd4bdecca191 // indirect
 	golang.org/x/sys v0.0.0-20191026070338-33540a1f6037 // indirect

@@ -187,7 +187,7 @@ func addMetaData(name string) {
 		metaFileName := newPath + ".meta"
 		if !PathExists(metaFileName) {
 			log.Info("File " + newPath + " has been changed, but no meta file found. Creating...")
-			randomString := RandStringBytesMaskImprSrcUnsafe(config.hashSize)
+			randomString := RandStringBytesMaskImprSrcUnsafe(config.HashSize)
 			fileContent := metaFile{
 				Accesses: 0,
 				Id:       randomString,
