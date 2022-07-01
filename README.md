@@ -11,7 +11,7 @@ A quite simple and dirty go application for sharing files on a local directory t
 
 ## How does this work?
 
-The application is started using docker and watches (using ) a mounted and therefore a beliebige directory.
+The application is started using docker and watches any mounted directory.
 If a new file is created in the directory, a hash is generated and stored in a meta file next to the file (see the first screenshot).
 The webserver provides a file and its metadata using this hash.
 A simple key-value file (`data.yaml`) is used to store the hash and the file name to improve the performance.
@@ -31,7 +31,7 @@ So here my solution, quite simple and very dirty ;).
 
 Create a `config.yaml` file somewhere with this content:
 ```yaml
-path: dir_to_share # is ignored inside the docker container
+path: dir_to_share # is ignored when using the docker container installation
 DataFile: data.yaml
 BaseUrl: http://localhost:8080/ # so the generated urls are correct
 kutt: # Kutt data
@@ -61,3 +61,7 @@ docker cp 33d85f7ac9a3:/static ./static
 Then restart the container.
 The webserver provides an api under the `/[HASH]/api` path.
 `/[HASH]/download` is the path for downloading, `/[HASH]/view` for previewing.
+
+## Etc
+
+<a target="_blank" href="https://icons8.com/icon/111132/file">File</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>

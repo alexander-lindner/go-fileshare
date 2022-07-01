@@ -7,7 +7,7 @@ dependencies:
 deprecated: false
 description: An filesharer
 home: https://github.com/alexander-lindner/go-fileshare
-icon: https://truecharts.org/_static/img/appicons/heimdall.png
+icon: https://img.icons8.com/bubbles/344/file.png
 keywords:
   - go-fileshare
 kubeVersion: '>=1.16.0-0'
