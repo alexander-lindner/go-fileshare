@@ -1,0 +1,22 @@
+apiVersion: v2
+appVersion: "0.1.0"
+dependencies:
+  - name: common
+    repository: https://library-charts.truecharts.org
+    version: 10.1.4
+deprecated: false
+description: An filesharer
+home: https://github.com/alexander-lindner/go-fileshare
+icon: https://img.icons8.com/bubbles/344/file.png
+keywords:
+  - go-fileshare
+kubeVersion: '>=1.16.0-0'
+maintainers:
+  - email: 25225552+alexander-lindner@users.noreply.github.com
+    name: Alexander Lindner
+    url: https://alindner.org
+name: fileshare
+sources:
+  - https://github.com/alexander-lindner/go-fileshare
+type: application
+version: 0.1.1

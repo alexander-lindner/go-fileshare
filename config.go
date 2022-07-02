@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/creasty/defaults"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -19,7 +20,7 @@ type Config struct {
 		UrlShortenerUrl       string `default:"" yaml:"url"`
 	}
 	StaticDir string
-	hashSize  int `default:"128" yaml:"hashLength"`
+	HashSize  int `default:"128" yaml:"hashLength"`
 }
 
 func init() {
@@ -70,9 +71,15 @@ func (c *Config) loadConfig() {
 		if err != nil {
 			log.Panic("Couldn't read from "+c.globalConfigFile, err)
 		}
+
 		err = yaml.Unmarshal(content, c)
 		if err != nil {
 			log.Panic("Couldn't read from "+c.globalConfigFile, err)
+		}
+		err = defaults.Set(c)
+		if err != nil {
+			log.Error("Couldn't set defaults for config. ", err)
+			log.Println("Current config: ", c)
 		}
 	} else {
 		log.Panic("Couldn't find " + c.globalConfigFile)
