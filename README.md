@@ -1,6 +1,7 @@
 # go-fileshare
 
 A quite simple and dirty go application for sharing files on a local directory through a builtin webserver.
+
 ## Features
 * Only 10.7 MB of Docker image
 * Cross-platform
@@ -13,7 +14,7 @@ A quite simple and dirty go application for sharing files on a local directory t
 
 The application is started using docker and watches any mounted directory.
 If a new file is created in the directory, a hash is generated and stored in a meta file next to the file (see the first screenshot).
-The webserver provides a file and its metadata using this hash.
+The webserver provides the file and its metadata using this hash.
 A simple key-value file (`data.yaml`) is used to store the hash and the file name to improve the performance.
 A simple `config.yaml` file is used to configure the application.
 To delete a shared file, simply delete the file (and the meta file).
@@ -23,7 +24,7 @@ An additional feature is shortify the url using a custom [Kutt](https://kutt.it)
 ## Background
 
 I'm running a TrueNAS Scale server with a NFS share (as well as an SMB share).
-I simply want to share a file on that share with other person.
+I simply want to share a file on that network drive with other persons.
 My main requirement was to only invest a couple of hours - so no fancy dolphin integration or complex web ui.
 So here my solution, quite simple and very dirty ;).
 
@@ -48,7 +49,7 @@ After starting the container using a method from down below, optionally add a re
 ### Docker
 
 ```shell
-docker run --rm -ti -v $(pwd)/data:/data -v $(pwd)/config:/workdir -p 8080:8080 ghcr.io/alexander-lindner/go-fileshare:latest
+docker run -ti  --name="fileshare" --restart="always" -v $(pwd)/data:/data -v $(pwd)/config:/workdir -p 8080:8080 ghcr.io/alexander-lindner/go-fileshare:latest
 ```
 
 ### Docker-compose
@@ -57,6 +58,7 @@ docker run --rm -ti -v $(pwd)/data:/data -v $(pwd)/config:/workdir -p 8080:8080 
 version: '3.3'
 services:
     fileshare:
+        restart: always
         volumes:
             - './data:/data'
             - './config:/workdir'
@@ -67,7 +69,14 @@ services:
 ### TrueNAS Scale (Helm)
 
 Add this repo as a Catalog:
-![img.png](screenshot-truenas-catalog.png)
+
+| Key | Value |
+| --- | --- |
+| Name | `go-fileshare` |
+| Url | `https://github.com/alexander-lindner/go-fileshare` |
+| Branch | `master` |
+| Preferred Trains| `stable` |
+
 Find the application and install it:
 
 ![img.png](screenshot-truenas-app.png)
@@ -84,6 +93,13 @@ docker cp CONTAINER_ID:/static ./static
 Then restart the container.
 The webserver provides an api under the `/[HASH]/api` path.
 `/[HASH]/download` is the path for downloading, `/[HASH]/view` for previewing.
+
+## ToDo's
+
+* share directories
+* support deleting files
+* multiple mounted directories
+* support custom Kutt url
 
 ## Etc
 
