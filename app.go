@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -64,8 +65,20 @@ func main() {
 				return
 			}
 			pathName := stat.Name()
-			size := strconv.FormatInt(stat.Size(), 10)
-			_, err = w.Write([]byte("{\"name\":\"" + pathName + "\",\"size\":\"" + size + "\",\"hash\":\"" + hash + "\"}"))
+			typeOfFile := "file"
+			var size int64
+			if stat.IsDir() {
+				size, err = DirSize(path)
+				if err != nil {
+					http.Error(w, "Couldn't detect size for "+path, http.StatusInternalServerError)
+					return
+				}
+				pathName += ".tar.gz"
+				typeOfFile = "dir"
+			} else {
+				size = stat.Size()
+			}
+			_, err = w.Write([]byte("{\"name\":\"" + pathName + "\",\"size\":\"" + strconv.FormatInt(size, 10) + "\",\"hash\":\"" + hash + "\", \"type\":\"" + typeOfFile + "\"}"))
 		} else {
 			_, err = w.Write([]byte("{\"hash\":\"" + hash + "\"}"))
 		}
@@ -79,6 +92,11 @@ func main() {
 		hash := vars["path"]
 		if _, ok := config.data[hash]; ok {
 			path := config.data[hash].(string)
+			stat, err := os.Stat(path)
+			if PathExists(path) && (err == nil && stat.IsDir()) {
+				http.Error(w, "Cannot read directory / tar.gz file: "+path, http.StatusInternalServerError)
+				return
+			}
 			content, err := ioutil.ReadFile(path)
 			if err != nil {
 				http.Error(w, "Couldn't read from "+path, http.StatusInternalServerError)
@@ -119,9 +137,17 @@ func main() {
 				metaFile.Accesses++
 				saveMetaFile(metaFileName, metaFile)
 			}()
-
-			http.ServeFile(w, r, path)
+			if stat, err = os.Stat(path); err == nil && stat.IsDir() {
+				tar, _ := tarIt(path)
+				_, err := w.Write(tar.Bytes())
+				if err != nil {
+					http.Error(w, "Cannot download tar.gz file: "+path, http.StatusInternalServerError)
+				}
+			} else {
+				http.ServeFile(w, r, path)
+			}
 		}
+		return
 	})
 	srv := &http.Server{
 		Addr:         "0.0.0.0:8080",
@@ -183,35 +209,47 @@ func background() {
 
 func addMetaData(name string) {
 	newPath := config.OriginalPath + "/" + name
-	if PathExists(newPath) && !IsDirectory(newPath) && filenameNotEndingWith(name, ".meta") && name[0] != '.' {
-		metaFileName := newPath + ".meta"
-		if !PathExists(metaFileName) {
-			log.Info("File " + newPath + " has been changed, but no meta file found. Creating...")
-			randomString := RandStringBytesMaskImprSrcUnsafe(config.HashSize)
-			fileContent := metaFile{
-				Accesses: 0,
-				Id:       randomString,
-				Url:      config.BaseUrl + "/" + randomString,
-			}
-
-			config.data[randomString] = newPath
-
-			if config.Kutt.IsUrlShortenerEnabled {
-				cli := kutt.NewClient(config.Kutt.UrlShortenerApiKey)
-				cli.BaseURL = config.Kutt.UrlShortenerUrl
-				URL, err := cli.Submit(
-					fileContent.Url,
-				)
-				if err != nil {
-					log.Error("Error while creating the url shortener. ", err)
-				}
-				fileContent.Url = URL.ShortURL
-			}
-			saveMetaFile(metaFileName, fileContent)
-
-			go config.saveData()
-		}
+	metaFileName := newPath + ".meta"
+	if !PathExists(newPath) {
+		log.Error("File doesn't exist: ", newPath)
 	}
+	if strings.HasSuffix(name, ".meta") {
+		log.Debug("Skipping meta file: ", newPath)
+		return
+	}
+	if name[0] == '.' {
+		log.Debug("Skipping hidden file: ", newPath)
+		return
+	}
+	if PathExists(metaFileName) {
+		log.Debug("Meta file already exists: ", metaFileName)
+		return
+	}
+
+	log.Info("File " + newPath + " has been changed, but no meta file found. Creating...")
+	randomString := RandStringBytesMaskImprSrcUnsafe(config.HashSize)
+	fileContent := metaFile{
+		Accesses: 0,
+		Id:       randomString,
+		Url:      config.BaseUrl + "/" + randomString,
+	}
+
+	config.data[randomString] = newPath
+
+	if config.Kutt.IsUrlShortenerEnabled {
+		cli := kutt.NewClient(config.Kutt.UrlShortenerApiKey)
+		cli.BaseURL = config.Kutt.UrlShortenerUrl
+		URL, err := cli.Submit(
+			fileContent.Url,
+		)
+		if err != nil {
+			log.Error("Error while creating the url shortener. ", err)
+		}
+		fileContent.Url = URL.ShortURL
+	}
+	saveMetaFile(metaFileName, fileContent)
+
+	go config.saveData()
 }
 
 func loadMetaFile(metaFileName string) metaFile {

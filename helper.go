@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"strings"
+	"path/filepath"
 	"time"
 	"unsafe"
 )
@@ -51,16 +51,7 @@ func loopThroughFiles(path string, callback func(name string)) {
 		}
 	}
 }
-func filenameNotEndingWith(name string, s string) bool {
-	return !strings.HasSuffix(name, s)
-}
-func IsDirectory(path string) bool {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return fileInfo.IsDir()
-}
+
 func PathExists(path string) bool {
 	if _, err := os.Stat(path); err == nil {
 		return true
@@ -70,4 +61,18 @@ func PathExists(path string) bool {
 		log.Panic("Couldn't fetch stats for "+path, err)
 		return false
 	}
+}
+
+func DirSize(path string) (int64, error) {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
 }

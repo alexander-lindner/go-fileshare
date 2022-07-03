@@ -10,69 +10,79 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"
             integrity="sha512-xIPqqrfvUAc/Cspuj7Bq0UtHNo/5qkdyngx6Vwt+tmbvTLDszzXM0G6c91LXmGrRx8KEPulT+AfOOez+TeVylg=="
             crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 <div class="container">
+    <br/>
     <div class="box">
+        <h1 class="heading">Infos</h1>
         <div class="columns">
             <div class="column is-one-third ">
                 <a class="button is-primary" href="./download">
-        <span class="icon">
-            <i class="fa fa-download"></i>
-        </span>
+                    <span class="icon">
+                        <i class="fa fa-download"></i>
+                    </span>
                     <span>Download</span>
                 </a>
-
-                <a class="button" href="./view">
-        <span class="icon">
-            <i class="fa fa-eye"></i>
-        </span>
-                    <span>View</span>
-                </a>
             </div>
-
-        <div class="column is-one-third ">
-            <p>
-                <strong>
-                    Name
-                </strong>
-            </p>
-            <p>
-            <span class="icon">
-                <i class="fa fa-info-circle"></i>
-            </span>
-                <span id="info"></span>
-            </p>
+            <div class="column is-one-third">
+                <p>
+                    <strong> Name </strong>
+                </p>
+                <p>
+                    <span class="icon">
+                        <i class="fa fa-info-circle"></i>
+                    </span>
+                    <span id="info"></span>
+                </p>
+            </div>
+            <div class="column is-one-third">
+                <p>
+                    <strong> Size </strong>
+                </p>
+                <p>
+                    <span class="icon">
+                        <i class="fa fa-sign"></i>
+                    </span>
+                    <span id="size"></span>
+                </p>
+            </div>
         </div>
-        <div class="column is-one-third ">
-            <p>
-                <strong>
-                    Size
-                </strong>
-            </p>
-            <p>
+    </div>
+    <div class="box" id="view" style="display: none">
+        <h1 class="heading">Preview</h1>
+        <a class="button" href="./view">
             <span class="icon">
-                <i class="fa fa-sign"></i>
+                <i class="fa fa-eye"></i>
             </span>
-                <span id="size"></span>
-            </p>        </div>
-        </div>
+            <span>Fullpage View</span>
+        </a>
+        <br/>
+        <br/>
+        <iframe width="100%" height="500px"></iframe>
     </div>
 </div>
 <script type="application/javascript">
     (function () {
-        path = document.location.pathname.substr(1)
-        axios.get("api").then(function (response) {
-            console.log(response.data)
+        axios.get("api").then(response => {
             document.getElementById("info").innerHTML = response.data.name
-            document.getElementById("size").innerHTML =bytesToSize( response.data.size)
+            if (response.data.type === "dir") {
+                document.getElementById("size").innerHTML = "<span title='The directory is compressed and therefore, the size may be lower'>~ " + bytesToSize(parseInt(response.data.size)) + "</span>"
+            } else {
+                document.getElementById("size").innerHTML = bytesToSize(parseInt(response.data.size))
+                if (!response.data.name.endsWith(".tar.gz") && !response.data.name.endsWith(".tar") && !response.data.name.endsWith(".zip")) {
+                    document.getElementById("view").style.display = "block"
+                    document.getElementsByTagName("iframe")[0].src = "./view"
+                }
+            }
         })
     })();
 
     function bytesToSize(bytes) {
-        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        if (bytes == 0) return '0 Byte';
-        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        if (bytes === 0) return '0 Byte';
+        let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
         return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 </script>
