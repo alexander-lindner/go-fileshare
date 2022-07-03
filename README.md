@@ -5,15 +5,16 @@ A quite simple and dirty go application for sharing files on a local directory t
 ## Features
 * Only 10.7 MB of Docker image
 * Cross-platform
+* Directory are tar.gz compressed on the fly
 
-## Screenshots
-![Image of Dolphin and the meta file content](screenshot1.png)
-![Preview page of the shared file](screenshot2.png)
+## Recording
+
+[![asciicast](https://asciinema.org/a/505763.svg)](https://asciinema.org/a/505763)
 
 ## How does this work?
 
 The application is started using docker and watches any mounted directory.
-If a new file is created in the directory, a hash is generated and stored in a meta file next to the file (see the first screenshot).
+If a new file is created in the directory, a hash is generated and stored in a meta file next to the file (see the recording).
 The webserver provides the file and its metadata using this hash.
 A simple key-value file (`data.yaml`) is used to store the hash and the file name to improve the performance.
 A simple `config.yaml` file is used to configure the application.
@@ -96,10 +97,11 @@ The webserver provides an api under the `/[HASH]/api` path.
 
 ## ToDo's
 
-* share directories
+* preview directories
 * support deleting files
 * multiple mounted directories
 * support custom Kutt url
+* Fix data.meta file is created
 
 ## Etc
 
