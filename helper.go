@@ -46,7 +46,10 @@ func loopThroughFiles(path string, callback func(name string)) {
 			if item.IsDir() {
 				continue
 			} else {
-				callback(item.Name())
+				p := path + "/" + item.Name()
+				if PathExists(p) {
+					callback(p)
+				}
 			}
 		}
 	}

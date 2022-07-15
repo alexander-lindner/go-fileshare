@@ -9,7 +9,7 @@ A quite simple and dirty go application for sharing files on a local directory t
 
 ## Recording
 
-[![asciicast](https://asciinema.org/a/505763.svg)](https://asciinema.org/a/505763)
+[![asciicast](https://asciinema.org/a/508977.svg)](https://asciinema.org/a/508977)
 
 ## How does this work?
 

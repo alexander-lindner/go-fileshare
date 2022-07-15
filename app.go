@@ -3,15 +3,11 @@ package main
 import (
 	"context"
 	"github.com/gorilla/mux"
-	"github.com/raahii/kutt-go"
 	"github.com/radovskyb/watcher"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -23,11 +19,27 @@ type metaFile struct {
 }
 
 var config = NewConfig()
+var quit chan struct{}
+
+func init() {
+	quit = make(chan struct{})
+}
 
 func main() {
 	config.loadConfig()
 	go background()
 
+	startWebServer()
+
+	close(quit)
+	// Optionally, you could run srv.Shutdown in a goroutine and block on
+	// <-ctx.Done() if your application should wait for other services
+	// to finalize based on context cancellation.
+	log.Println("shutting down")
+	os.Exit(0)
+}
+
+func startWebServer() {
 	staticDir := config.StaticDir
 	fileServer := http.FileServer(http.Dir(staticDir))
 
@@ -46,109 +58,9 @@ func main() {
 
 		http.ServeFile(w, r, staticDir+"/serve.html")
 	})
-	r.HandleFunc("/{path}/api", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		hash := vars["path"]
-		if hash == "" {
-			http.Error(w, "No hash provided", http.StatusBadRequest)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		var err error
-		if _, ok := config.data[hash]; ok {
-			path := config.data[hash].(string)
-			//metaFileName := path + ".meta"
-			//metaFile := loadMetaFile(metaFileName)
-			stat, err := os.Stat(path)
-			if err != nil {
-				http.Error(w, "Couldn't read from "+path, http.StatusInternalServerError)
-				return
-			}
-			pathName := stat.Name()
-			typeOfFile := "file"
-			var size int64
-			if stat.IsDir() {
-				size, err = DirSize(path)
-				if err != nil {
-					http.Error(w, "Couldn't detect size for "+path, http.StatusInternalServerError)
-					return
-				}
-				pathName += ".tar.gz"
-				typeOfFile = "dir"
-			} else {
-				size = stat.Size()
-			}
-			_, err = w.Write([]byte("{\"name\":\"" + pathName + "\",\"size\":\"" + strconv.FormatInt(size, 10) + "\",\"hash\":\"" + hash + "\", \"type\":\"" + typeOfFile + "\"}"))
-		} else {
-			_, err = w.Write([]byte("{\"hash\":\"" + hash + "\"}"))
-		}
-		if err != nil {
-			log.Error("Couldn't write to the response writer. ", err)
-			return
-		}
-	})
-	r.HandleFunc("/{path}/view", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		hash := vars["path"]
-		if _, ok := config.data[hash]; ok {
-			path := config.data[hash].(string)
-			stat, err := os.Stat(path)
-			if PathExists(path) && (err == nil && stat.IsDir()) {
-				http.Error(w, "Cannot read directory / tar.gz file: "+path, http.StatusInternalServerError)
-				return
-			}
-			content, err := ioutil.ReadFile(path)
-			if err != nil {
-				http.Error(w, "Couldn't read from "+path, http.StatusInternalServerError)
-				return
-			}
-			_, err = w.Write(content)
-			if err != nil {
-				log.Error("Couldn't write to the response writer. ", err)
-				return
-			}
-
-			go func() {
-				metaFileName := path + ".meta"
-				metaFile := loadMetaFile(metaFileName)
-				metaFile.Accesses++
-				saveMetaFile(metaFileName, metaFile)
-			}()
-
-		}
-	})
-	r.HandleFunc("/{path}/download", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		hash := vars["path"]
-		if _, ok := config.data[hash]; ok {
-			path := config.data[hash].(string)
-			stat, err := os.Stat(path)
-			if err != nil {
-				http.Error(w, "Couldn't read from "+path, http.StatusInternalServerError)
-				return
-			}
-			filename := stat.Name()
-			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filename))
-			w.Header().Set("Content-Type", "application/octet-stream")
-
-			go func() {
-				metaFileName := path + ".meta"
-				metaFile := loadMetaFile(metaFileName)
-				metaFile.Accesses++
-				saveMetaFile(metaFileName, metaFile)
-			}()
-			if stat, err = os.Stat(path); err == nil && stat.IsDir() {
-				tar, _ := tarIt(path)
-				_, err := w.Write(tar.Bytes())
-				if err != nil {
-					http.Error(w, "Cannot download tar.gz file: "+path, http.StatusInternalServerError)
-				}
-			} else {
-				http.ServeFile(w, r, path)
-			}
-		}
-		return
-	})
+	r.HandleFunc("/{path}/api", ApiRequest)
+	r.HandleFunc("/{path}/view", ViewRequest)
+	r.HandleFunc("/{path}/download", DownloadRequest)
 	srv := &http.Server{
 		Addr:         "0.0.0.0:8080",
 		WriteTimeout: time.Second * 15,
@@ -178,12 +90,11 @@ func main() {
 	defer cancel()
 	// Doesn't block if no connections, but will otherwise wait
 	// until the timeout deadline.
-	srv.Shutdown(ctx)
-	// Optionally, you could run srv.Shutdown in a goroutine and block on
-	// <-ctx.Done() if your application should wait for other services
-	// to finalize based on context cancellation.
-	log.Println("shutting down")
-	os.Exit(0)
+	err := srv.Shutdown(ctx)
+	if err != nil {
+		log.Error("Server Shutdown:", err)
+		return
+	}
 }
 
 func background() {
@@ -192,7 +103,6 @@ func background() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for sig := range c {
-
 			log.Println("Caught a [CTRL]+[C], stopping watch process ...")
 			log.Debug(sig)
 
@@ -201,84 +111,35 @@ func background() {
 		}
 	}()
 
-	loopThroughFiles(config.OriginalPath, addMetaData)
-	go watch(config.OriginalPath, &done, addMetaData, func() {
+	cleanup()
+
+	go watch(config.OriginalPath, &done, addMetaData, removeMetaData, renameMetaData, func() {
 		log.Fatal("Error while watching the file. Please check the file permissions and try again.")
 	})
-}
 
-func addMetaData(name string) {
-	newPath := config.OriginalPath + "/" + name
-	metaFileName := newPath + ".meta"
-	if !PathExists(newPath) {
-		log.Error("File doesn't exist: ", newPath)
-	}
-	if strings.HasSuffix(name, ".meta") {
-		log.Debug("Skipping meta file: ", newPath)
-		return
-	}
-	if name[0] == '.' {
-		log.Debug("Skipping hidden file: ", newPath)
-		return
-	}
-	if PathExists(metaFileName) {
-		log.Debug("Meta file already exists: ", metaFileName)
-		return
-	}
+	ticker := time.NewTicker(5 * time.Minute)
 
-	log.Info("File " + newPath + " has been changed, but no meta file found. Creating...")
-	randomString := RandStringBytesMaskImprSrcUnsafe(config.HashSize)
-	fileContent := metaFile{
-		Accesses: 0,
-		Id:       randomString,
-		Url:      config.BaseUrl + "/" + randomString,
-	}
-
-	config.data[randomString] = newPath
-
-	if config.Kutt.IsUrlShortenerEnabled {
-		cli := kutt.NewClient(config.Kutt.UrlShortenerApiKey)
-		cli.BaseURL = config.Kutt.UrlShortenerUrl
-		URL, err := cli.Submit(
-			fileContent.Url,
-		)
-		if err != nil {
-			log.Error("Error while creating the url shortener. ", err)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				cleanup()
+			case <-quit:
+				ticker.Stop()
+				return
+			}
 		}
-		fileContent.Url = URL.ShortURL
-	}
-	saveMetaFile(metaFileName, fileContent)
-
-	go config.saveData()
+	}()
+}
+func cleanup() {
+	loopThroughFiles(config.OriginalPath, removeMetaData)
+	loopThroughFiles(config.OriginalPath, addMetaData)
 }
 
-func loadMetaFile(metaFileName string) metaFile {
-	content, err := ioutil.ReadFile(metaFileName)
-	if err != nil {
-		log.Error("Couldn't read from "+metaFileName, err)
-	}
-	var fileContent metaFile
-	err = yaml.Unmarshal(content, &fileContent)
-	if err != nil {
-		log.Error("Couldn't unyamlize the meta file. ", err)
-	}
-	return fileContent
-}
-
-func saveMetaFile(metaFileName string, fileContent metaFile) {
-	content, err := yaml.Marshal(&fileContent)
-	if err != nil {
-		log.Panic("Couldn't yamlize the meta file. ", err)
-	}
-	err = os.WriteFile(metaFileName, content, 0644)
-	if err != nil {
-		log.Panic("Couldn't write to "+metaFileName, err)
-	}
-}
-
-func watch(path string, done *bool, callback func(name string), errorCallback func()) {
+func watch(path string, done *bool, callback func(name string), removeCallback func(name string), renameCallback func(oldPath string, newPath string), errorCallback func()) {
 	w := watcher.New()
-	w.FilterOps(watcher.Write, watcher.Create)
+	w.IgnoreHiddenFiles(true)
+	w.FilterOps(watcher.Create, watcher.Remove, watcher.Rename, watcher.Move, watcher.Write)
 
 	log.Info("Adding background watcher for changed files...")
 	go func() {
@@ -286,15 +147,35 @@ func watch(path string, done *bool, callback func(name string), errorCallback fu
 
 			select {
 			case event := <-w.Event:
-				callback(event.Name())
+				switch event.Op {
+				case watcher.Create:
+					if strings.HasSuffix(event.Path, ".meta") {
+						continue
+					}
+					if PathExists(event.Path) {
+						callback(event.Path)
+					}
+				case watcher.Remove:
+					if strings.HasSuffix(event.Path, ".meta") {
+						if !PathExists(strings.TrimSuffix(event.Path, ".meta")) {
+							continue
+						}
+						callback(strings.TrimSuffix(event.Path, ".meta"))
+					} else {
+						removeCallback(event.Path + ".meta")
+					}
+				case watcher.Rename:
+				case watcher.Move:
+					renameCallback(event.OldPath, event.Path)
+				case watcher.Write:
+					go cleanup()
+				}
 
 			case err := <-w.Error:
 				if err != nil {
 					log.Println("error:", err)
 				}
-				go func() {
-					errorCallback()
-				}()
+				go errorCallback()
 				w.Close()
 			case <-w.Closed:
 				return
