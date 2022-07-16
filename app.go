@@ -132,8 +132,8 @@ func background() {
 	}()
 }
 func cleanup() {
-	loopThroughFiles(config.OriginalPath, removeMetaData)
-	loopThroughFiles(config.OriginalPath, addMetaData)
+	loopThroughFiles(config.OriginalPath, removeMetaData, false)
+	loopThroughFiles(config.OriginalPath, addMetaData, false)
 }
 
 func watch(path string, done *bool, callback func(name string), removeCallback func(name string), renameCallback func(oldPath string, newPath string), errorCallback func()) {

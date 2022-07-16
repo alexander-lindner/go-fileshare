@@ -39,12 +39,16 @@ func RandStringBytesMaskImprSrcUnsafe(n int) string {
 
 	return *(*string)(unsafe.Pointer(&b))
 }
-func loopThroughFiles(path string, callback func(name string)) {
+func loopThroughFiles(path string, callback func(name string), recursive bool) {
 	if PathExists(path) {
 		items, _ := ioutil.ReadDir(path)
 		for _, item := range items {
 			if item.IsDir() {
-				continue
+				if recursive {
+					loopThroughFiles(path+"/"+item.Name(), callback, recursive)
+				} else {
+					continue
+				}
 			} else {
 				p := path + "/" + item.Name()
 				if PathExists(p) {

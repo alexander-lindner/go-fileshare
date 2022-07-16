@@ -55,15 +55,26 @@ func ViewRequest(w http.ResponseWriter, r *http.Request) {
 	if hashExists(hash) {
 		path := GetPathFromHash(hash)
 		stat, err := os.Stat(path)
-		if PathExists(path) && (err == nil && stat.IsDir()) {
-			http.Error(w, "Cannot read directory / tar.gz file: "+path, http.StatusInternalServerError)
+		if !PathExists(path) {
+			http.Error(w, "Cannot read path: "+path, http.StatusInternalServerError)
 			return
 		}
-		content, err := ioutil.ReadFile(path)
-		if err != nil {
-			http.Error(w, "Couldn't read from "+path, http.StatusInternalServerError)
-			return
+		var content []byte
+		if err == nil && stat.IsDir() {
+			var files []string
+			loopThroughFiles(path, func(p string) {
+				files = append(files, "<li>"+strings.Replace(p, path, "", 1)+"</li>")
+			}, true)
+			content = []byte("<p>Directory content:</p><ul>" + strings.Join(files, "") + "</ul>")
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		} else {
+			content, err = ioutil.ReadFile(path)
+			if err != nil {
+				http.Error(w, "Couldn't read from "+path, http.StatusInternalServerError)
+				return
+			}
 		}
+
 		_, err = w.Write(content)
 		if err != nil {
 			log.Error("Couldn't write to the response writer. ", err)
@@ -90,7 +101,7 @@ func DownloadRequest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		filename := stat.Name()
-		w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filename))
+		w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filename)+".tar.gz")
 		w.Header().Set("Content-Type", "application/octet-stream")
 
 		go func() {
@@ -122,7 +133,7 @@ func GetPathFromHash(hash string) string {
 		if meta.Id == hash {
 			returnValue = strings.TrimSuffix(path, ".meta")
 		}
-	})
+	}, false)
 	return returnValue
 }
 
@@ -136,6 +147,6 @@ func hashExists(hash string) bool {
 		if meta.Id == hash {
 			returnValue = PathExists(strings.TrimSuffix(path, ".meta"))
 		}
-	})
+	}, false)
 	return returnValue
 }

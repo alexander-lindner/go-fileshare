@@ -71,10 +71,10 @@
                 document.getElementById("size").innerHTML = "<span title='The directory is compressed and therefore, the size may be lower'>~ " + bytesToSize(parseInt(response.data.size)) + "</span>"
             } else {
                 document.getElementById("size").innerHTML = bytesToSize(parseInt(response.data.size))
-                if (!response.data.name.endsWith(".tar.gz") && !response.data.name.endsWith(".tar") && !response.data.name.endsWith(".zip")) {
-                    document.getElementById("view").style.display = "block"
-                    document.getElementsByTagName("iframe")[0].src = "./view"
-                }
+            }
+            if ((response.data.type === "dir") || (!response.data.name.endsWith(".tar.gz") && !response.data.name.endsWith(".tar") && !response.data.name.endsWith(".zip"))) {
+                document.getElementById("view").style.display = "block"
+                document.getElementsByTagName("iframe")[0].src = "./view"
             }
         })
     })();

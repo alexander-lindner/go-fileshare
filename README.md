@@ -3,7 +3,7 @@
 A quite simple and dirty go application for sharing files on a local directory through a builtin webserver.
 
 ## Features
-* Only 10.7 MB of Docker image
+* Only 10.9 MB of Docker image
 * Cross-platform
 * Directory are tar.gz compressed on the fly
 
@@ -16,25 +16,24 @@ A quite simple and dirty go application for sharing files on a local directory t
 The application is started using docker and watches any mounted directory.
 If a new file is created in the directory, a hash is generated and stored in a meta file next to the file (see the recording).
 The webserver provides the file and its metadata using this hash.
-A simple key-value file (`data.yaml`) is used to store the hash and the file name to improve the performance.
 A simple `config.yaml` file is used to configure the application.
 To delete a shared file, simply delete the file (and the meta file).
 
-An additional feature is shortify the url using a custom [Kutt](https://kutt.it) installation.
+An additional feature is shortify the url using a (custom) [Kutt](https://kutt.it) installation.
 
 ## Background
 
 I'm running a TrueNAS Scale server with a NFS share (as well as an SMB share).
 I simply want to share a file on that network drive with other persons.
 My main requirement was to only invest a couple of hours - so no fancy dolphin integration or complex web ui.
-So here my solution, quite simple and very dirty ;).
+So here is my solution, quite simple and very dirty ;).
 
 ## Installation
 
 Create a `config.yaml` file somewhere with this content:
 ```yaml
 DataFile: data.yaml
-BaseUrl: http://localhost:8080/ # so the generated urls are correct
+BaseUrl: http://localhost:8080 # so the generated urls are correct
 kutt: # Kutt data
   key: ....
   enabled: false
@@ -42,7 +41,7 @@ kutt: # Kutt data
 hashLength: 128
 ```
 The image is based on the `distroless` image and therefore, the user `nonroot (65532:65532)` is used internally.
-Set the correct file permissions for the `config.yaml` file, the `data.yaml` file and the shared dir, for example:
+Set the correct file permissions for the `config.yaml` file and the shared dir, for example:
 `chown :65532 config.yaml -R && chmod 660 config.yaml`.
 
 After starting the container using a method from down below, optionally add a reverse proxy in front of the container.
@@ -97,12 +96,15 @@ The webserver provides an api under the `/[HASH]/api` path.
 
 ## ToDo's
 
-* preview directories
-* support deleting files
+* ~~preview directories~~
+* ~~support deleting files~~
 * multiple mounted directories
 * support custom Kutt url
-* Fix data.meta file is created
-
+* ~~Fix data.meta file is created~~
+* remove directory name in downloaded tar.gz
+* preview of the content from tar.gz, zip, rar, 7z, ...
+* replacing the current html+js setup with https://github.com/valyala/fasttemplate
+* curl mode (detecting curl browser agent and show text only)
 ## Etc
 
 <a target="_blank" href="https://icons8.com/icon/111132/file">File</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
